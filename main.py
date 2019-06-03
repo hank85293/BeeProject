@@ -21,10 +21,10 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 import numpy as np
-
+        
 import pandas 
 
-from ResNetModel_yuzhe import ResNetModel 
+from ResNetModel import ResNetModel 
 
 def train(epoch , show_plot = False ):
     #switch MODEL to train mode
@@ -90,10 +90,10 @@ def test( epoch , show_batch_output = False ):
         #test_loss += F.cross_entropy( output , target , size_average=False).data[0]
         #pred = output.data.max(1,keepdim=True)[1]
         #correct += pred.eq(target.data.view_as(pred) ).cpu().sum()
-    print( "%15s:%2d/%2d"%("EPOCH",epoch,EPOCH))
+    print( "%15s:%2d/%2d"%("EPOCH",epoch+1,EPOCH))
     print( "%15s:%2d"%("Correct",correct))
     print( "%15s:%2d"%("Total",total))
-    print( "%15s:%5.4f%"%("Accuracy",correct/total * 100 ))
+    print( "%15s:%5.4f%s"%("Accuracy",correct/total * 100 ,"%"))
     print( "" )
     """
     test_loss /= len(test_loader.dataset )
@@ -102,35 +102,43 @@ def test( epoch , show_batch_output = False ):
         len(test_loader.dataset),
         100. *correct/len(test_loader.dataset)) )
     """
-    #print(output.data)
-    #print(list(MODEL.parameters()))
-    """
-    for parameter in MODEL.parameters() : 
-        print( parameter.data )
-    """
     return None 
 
 SHOW_PLOT   = False 
 SHOW_BATCH_OUTPUT = True 
-SAVE_MODEL  = False 
-LOAD_MODEL  = True 
+
+LOAD_MODEL  = True
+LOAD_MODEL_PATH = "./Epoch20.pkl"
+
+SAVE_MODEL  = True
+SAVE_MODEL_PATH = "./Epoch40.pkl"
+
 USE_GPU     = True
+
+ONLY_TEST   = False 
+
+MODEL = ResNetModel()
 
 if USE_GPU == True and torch.cuda.is_available() :    
     DEVICE = torch.device( "cuda:0" )
     print( "Use GPU for training")
+    
+    if torch.cuda.device_count() > 1 :
+        print( "Multiple GPU" )
+        MODEL = torch.nn.DataParallel( MODEL )
+    
 else : 
     DEVICE = torch.device( "cpu" )
     print( "Use CPU for training")
 
-MODEL = ResNetModel().to( DEVICE )
+MODEL.to( DEVICE )
 
 
 if LOAD_MODEL == True : 
+    print( "Load Model from :%s"%(LOAD_MODEL_PATH))
+    MODEL.load_state_dict(torch.load( LOAD_MODEL_PATH ))
 
-    MODEL.load_state_dict(torch.load("./preTrainModelEpoch5.pkl"))
-
-EPOCH           = 5
+EPOCH           = 20
 BATCH_SIZE      = 128
 
 LR              = 0.1
@@ -140,24 +148,31 @@ Momentum        = 0.9
 OPTIMIZER       = optim.Adam(MODEL.parameters())
 DATA_TRANSFORM  = transforms.Compose([ transforms.Resize((224,224) ) , transforms.ToTensor()])
 
-TRAIN_DATASET   = datasets.ImageFolder(root='./image',transform=DATA_TRANSFORM )
+TRAIN_DATASET_PATH = "./image/train"
+TRAIN_DATASET   = datasets.ImageFolder(root=TRAIN_DATASET_PATH,transform=DATA_TRANSFORM )
 TRAIN_LOADER    = torch.utils.data.DataLoader(TRAIN_DATASET,BATCH_SIZE,True)    
 
-TEST_DATASET    = datasets.ImageFolder(root='./image',transform=DATA_TRANSFORM)
+TEST_DATASET_PATH = "./image/test"
+TEST_DATASET    = datasets.ImageFolder(root=TEST_DATASET_PATH,transform=DATA_TRANSFORM)
 TEST_LOADER     = torch.utils.data.DataLoader(TEST_DATASET,1,True)
 
 #print(TEST_DATASET.class_to_idx)
 #print(TEST_DATASET.imgs)
 
 def main( ) : 
-
-    for epoch in range( EPOCH ) :
-        #train( epoch  )
-        test( epoch , True )
+    
+    if ONLY_TEST == False : 
+        
+        for epoch in range( EPOCH ) :
+            
+            train( epoch  )
+            #test( epoch , True )
+    
+    test( 1 , True )
     
     if SAVE_MODEL == True : 
-
-        torch.save(MODEL.state_dict(), "./preTrainModelEpoch5.pkl")
+        print( "Save Model to:%s"%(SAVE_MODEL_PATH))
+        torch.save(MODEL.state_dict(), SAVE_MODEL_PATH )
         
     return None
 

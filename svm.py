@@ -39,7 +39,7 @@ def svm(Feature,Label):
 if __name__ == '__main__':
 	#read csv
 	print("read csv...")
-	df = pd.read_csv('Feature1.csv')
+	df = pd.read_csv('./featuresEpoch40.csv')
 	#transform DataFrame to numpy.array
 	DataSet=df.values 
 	#print(type(DataSet))

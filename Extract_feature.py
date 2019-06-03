@@ -9,13 +9,16 @@ import pandas
 
 import numpy as np
 
-from ResNetModel_yuzhe import ResNetModel
+from ResNetModel import ResNetModel
+
+
 
 def extract_feature() :
 
     MODEL.eval()
     
-    EXTRACT_DATASET = datasets.ImageFolder( root="./image",transform=DATA_TRANSFORM)
+    DATA_TRANSFORM = transforms.Compose( [ transforms.Resize( (224,224)) , transforms.ToTensor() ])
+    EXTRACT_DATASET = datasets.ImageFolder( root=EXTRACT_DATASET_PATH ,transform=DATA_TRANSFORM)
     EXTRACT_LOADER  = torch.utils.data.DataLoader(EXTRACT_DATASET,batch_size=1)
 
     print( "Showcase the classes:" , EXTRACT_DATASET.class_to_idx )
@@ -42,22 +45,40 @@ def extract_feature() :
 
     all_feature_list = np.array( all_feature_list )
     output_csv = pandas.DataFrame( all_feature_list ) 
-    output_csv.to_csv( "./features.csv" )
+    output_csv.to_csv( SAVE_CSV_PATH )
 
+EXTRACT_DATASET_PATH = "./image/test"
+    
+LOAD_MODEL = True
+LOAD_MODEL_PATH = "./Epoch40.pkl"
+
+SAVE_CSV = True  
+SAVE_CSV_PATH = "./featuresEpoch40.csv"
 
 if __name__ == "__main__" : 
-
+    
+    MODEL = ResNetModel()
+    
     if torch.cuda.is_available() :
         
+        print( "Use GPU for extract features" )
         DEVICE = torch.device( "cuda:0" )
+        
+        if torch.cuda.device_count() > 1 : 
+            print( "Multiple GPU:%d"%(torch.cuda.device_count() ))
+            MODEL = torch.nn.DataParallel( MODEL )
+        
     else : 
-
+        
+        print( "Use CPU for extract features" )
         DEVICE = torch.device( "cpu" )
-    MODEL=models.resnet34(pretrained=False)    
-    fc_features = MODEL.fc.in_features
-    MODEL.fc = torch.nn.LeakyReLU(0.1)
-    print(MODEL)
-    MODEL.to(DEVICE)
-    DATA_TRANSFORM = transforms.Compose( [ transforms.Resize( (224,224)) , transforms.ToTensor() ])
+   
+    if LOAD_MODEL == True : 
+        
+        print( "Load model from :%15s"%( LOAD_MODEL_PATH ))
+        MODEL.load_state_dict(torch.load( LOAD_MODEL_PATH ))
 
+    MODEL.fc = torch.nn.LeakyReLU(0.1)
+    MODEL.to(DEVICE)
+        
     extract_feature()
