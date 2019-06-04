@@ -67,7 +67,7 @@ def val( cross_validation_index , MODEL , DEVICE , VALIDATION_SET , show_validat
 
     MODEL.eval()
 
-    VALIDATION_LOADER = torch.utils.data.DataLoader( VALIDATION_SET , BATCH_SIZE , True )
+    VALIDATION_LOADER = torch.utils.data.DataLoader( VALIDATION_SET , 1 , True )
 
     VAL_LOSS    = 0.0
     val_correct = 0
@@ -99,7 +99,7 @@ def val( cross_validation_index , MODEL , DEVICE , VALIDATION_SET , show_validat
             print( "%15s:%5.4f%s"%("Accuracy",val_correct/val_total * 100,"%" ))
             print( "" )
 
-    print( "%15s:2d"%( "Cross_validation", cross_validation_index + 1 ) )
+    print( "%15s:%2d"%( "Cross_validation", cross_validation_index + 1 ) )
     print( "%15s:%2d"%("Correct",val_correct))
     print( "%15s:%2d"%("Total",val_total))
     print( "%15s:%5.4f%s"%("Accuracy",val_correct/val_total * 100 ,"%"))
